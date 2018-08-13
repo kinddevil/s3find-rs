@@ -15,21 +15,18 @@ matrix:
 env:
   global:
     - RUST_BACKTRACE=1
+    - CARGO_MAKE_RUN_CODECOV=true
+
 script:
   - |
     if [[ "$TRAVIS_RUST_VERSION" == "stable" && "$TRAVIS_OS_NAME" == "linux" ]]; then
-      export CARGO_TARGET_DIR="$(pwd)/target"
-      RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install --force cargo-tarpaulin
-      unset CARGO_TARGET_DIR
+      if [ ! -f ~/.cargo/bin/cargo-make ]; then
+        cargo install --force --debug cargo-make
+      fi
+      cargo make ci-flow
     else
       cargo build --verbose --all
       cargo test --verbose --all
-    fi
-after_success:
-  - |
-    if [[ "$TRAVIS_RUST_VERSION" == "stable" && "$TRAVIS_OS_NAME" == "linux" ]]; then
-      cargo tarpaulin --out Xml --no-count
-      bash <(curl -s https://codecov.io/bash)
     fi
 before_deploy:
   - |
