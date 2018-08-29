@@ -23,7 +23,7 @@ exclude = [
     ".travis.yml",
     "ci/*",
 ]
-build = "build.rs"
+#build = "build.rs"
 
 [[bin]]
 name = "s3find"
