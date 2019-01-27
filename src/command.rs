@@ -277,6 +277,7 @@ mod tests {
             size: vec![FindSize::Lower(1000)],
             limit: None,
             page_size: 1000,
+            stats: false,
             cmd: Some(Cmd::Ls),
         }
         .into();
