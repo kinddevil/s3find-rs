@@ -2,6 +2,7 @@ use failure::Error;
 use rusoto_core::request::HttpClient;
 use rusoto_core::Region;
 use rusoto_s3::{ListObjectsV2Request, Object, S3Client, Tag, Tagging};
+use std::default::Default;
 
 use crate::arg::*;
 use crate::credential::*;
@@ -29,12 +30,18 @@ pub struct FindCommand {
     pub filters: FilterList,
     pub limit: Option<usize>,
     pub page_size: i64,
+    pub stats: bool,
     pub command: Option<Cmd>,
 }
 
 impl FindCommand {
     #![allow(unreachable_patterns)]
-    pub fn exec(&self, list: &[&Object]) -> Result<(), Error> {
+    pub fn exec(&self, list: &[&Object], acc: Option<FindStat>) -> Result<Option<FindStat>, Error> {
+        let status = match acc {
+            Some(stat) => Some(stat.add(list)),
+            None => None,
+        };
+
         match (*self).command {
             Some(Cmd::Print) => {
                 let _nlist: Vec<_> = list
@@ -99,7 +106,7 @@ impl FindCommand {
                 let _nlist: Vec<_> = list.iter().map(|x| fprint(&self.path.bucket, x)).collect();
             }
         }
-        Ok(())
+        Ok(status)
     }
 
     pub fn list_request(&self) -> ListObjectsV2Request {
@@ -115,6 +122,14 @@ impl FindCommand {
             start_after: None,
         }
     }
+
+    pub fn stats(&self) -> Option<FindStat> {
+        if self.stats {
+            Some(FindStat::default())
+        } else {
+            None
+        }
+    }
 }
 
 impl From<FindOpt> for FindCommand {
@@ -128,12 +143,13 @@ impl From<FindOpt> for FindCommand {
         let client = S3Client::new_with(dispatcher, provider, region.clone());
 
         FindCommand {
-            path: opts.path.clone(),
             client,
             region,
             filters: opts.clone().into(),
-            command: opts.cmd.clone(),
+            path: opts.path,
+            command: opts.cmd,
             page_size: opts.page_size,
+            stats: opts.stats,
             limit: opts.limit,
         }
     }
@@ -172,6 +188,50 @@ impl From<FindTag> for Tag {
         Tag {
             key: tag.key,
             value: tag.value,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FindStat {
+    pub count: usize,
+    pub size: i64,
+    pub max: i64,
+    pub min: i64,
+    pub max_key: String,
+    pub min_key: String,
+}
+
+impl FindStat {
+    pub fn add(mut self: FindStat, list: &[&Object]) -> FindStat {
+        for x in list {
+            self.count += 1;
+            let size = x.size.as_ref().unwrap_or(&0);
+            self.size += size;
+
+            if self.max < *size {
+                self.max = *size;
+                self.max_key = x.key.clone().unwrap_or_default();
+            }
+
+            if self.min > *size {
+                self.min = *size;
+                self.min_key = x.key.clone().unwrap_or_default();
+            }
+        }
+        self
+    }
+}
+
+impl Default for FindStat {
+    fn default() -> Self {
+        FindStat {
+            count: 0,
+            size: 0,
+            max: 0,
+            min: i64::max_value(),
+            max_key: "".to_owned(),
+            min_key: "".to_owned(),
         }
     }
 }
