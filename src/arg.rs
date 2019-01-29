@@ -198,6 +198,10 @@ pub enum Cmd {
     /// Make the matched keys public available (readonly)
     #[structopt(name = "-public")]
     Public,
+
+    /// Do not do anything with keys, do not print them as well
+    #[structopt(name = "-nothing")]
+    Nothing,
 }
 
 #[derive(Fail, Debug)]
