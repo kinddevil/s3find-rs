@@ -32,7 +32,7 @@ pub struct FindCommand {
     pub filters: FilterList,
     pub limit: Option<usize>,
     pub page_size: i64,
-    pub stats: bool,
+    pub summarize: bool,
     pub command: Option<Cmd>,
 }
 
@@ -127,7 +127,7 @@ impl FindCommand {
     }
 
     pub fn stats(&self) -> Option<FindStat> {
-        if self.stats {
+        if self.summarize {
             Some(FindStat::default())
         } else {
             None
@@ -152,7 +152,7 @@ impl From<FindOpt> for FindCommand {
             path: opts.path,
             command: opts.cmd,
             page_size: opts.page_size,
-            stats: opts.stats,
+            summarize: opts.summarize,
             limit: opts.limit,
         }
     }
@@ -327,7 +327,7 @@ mod tests {
             size: vec![FindSize::Lower(1000)],
             limit: None,
             page_size: 1000,
-            stats: false,
+            summarize: false,
             cmd: Some(Cmd::Ls),
         }
         .into();
