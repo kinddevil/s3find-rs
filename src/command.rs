@@ -5,6 +5,7 @@ use rusoto_core::Region;
 use rusoto_s3::{ListObjectsV2Request, Object, S3Client, Tag, Tagging};
 use std::default::Default;
 use std::fmt;
+use std::ops::Add;
 
 use crate::arg::*;
 use crate::credential::*;
@@ -37,10 +38,9 @@ pub struct FindCommand {
 }
 
 impl FindCommand {
-    #![allow(unreachable_patterns)]
     pub fn exec(&self, list: &[&Object], acc: Option<FindStat>) -> Result<Option<FindStat>, Error> {
         let status = match acc {
-            Some(stat) => Some(stat.add(list)),
+            Some(stat) => Some(stat + list),
             None => None,
         };
 
@@ -104,7 +104,6 @@ impl FindCommand {
                 true,
             )?,
             Some(Cmd::Nothing) => {}
-            Some(_) => println!("Not implemented"),
             None => {
                 let _nlist: Vec<_> = list.iter().map(|x| fprint(&self.path.bucket, x)).collect();
             }
@@ -206,8 +205,11 @@ pub struct FindStat {
     pub average_size: i64,
 }
 
-impl FindStat {
-    pub fn add(mut self: FindStat, list: &[&Object]) -> FindStat {
+impl Add<&[&Object]> for FindStat {
+    type Output = FindStat;
+
+    #[allow(clippy::suspicious_arithmetic_impl)]
+    fn add(mut self: FindStat, list: &[&Object]) -> FindStat {
         for x in list {
             self.total_files += 1;
             let size = x.size.as_ref().unwrap_or(&0);
