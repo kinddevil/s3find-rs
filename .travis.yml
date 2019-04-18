@@ -49,7 +49,7 @@ matrix:
           docker run --rm -v "$PWD:/volume" -w "/volume" \
             multiarch/ubuntu-debootstrap:arm64-xenial \
             sh -c 'apt-get update && \
-                apt-get install -y  curl && \
+                apt-get install -y  curl gcc && \
                 curl https://sh.rustup.rs -sSf | sh -s -- -y && \
                 . $HOME/.cargo/env && \
                 cargo build --verbose && \
