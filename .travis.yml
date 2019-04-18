@@ -30,8 +30,28 @@ matrix:
       services:
         - docker
       script: |
-        docker run --security-opt seccomp=unconfined -v "$PWD:/volume" xd009642/tarpaulin:latest sh -c "cargo tarpaulin -f -t 5 --out Xml"
+        docker run --rm --security-opt seccomp=unconfined -v "$PWD:/volume" xd009642/tarpaulin:latest sh -c "cargo tarpaulin -f -t 5 --out Xml"
         bash <(curl -s https://codecov.io/bash)
+      before_deploy:
+      deploy:
+    - name: linux_arm64
+      os: linux
+      addons:
+        apt:
+          packages:
+            - libssl-dev
+      services:
+        - docker
+      install:
+        - docker run --rm --privileged multiarch/qemu-user-static:register --reset
+      script:
+        - |
+          docker run -rm -v "$PWD:/volume" -w "$PWD:/volume" \
+            multiarch/ubuntu-debootstrap:arm64-xenial \
+            sh -c 'curl https://sh.rustup.rs -sSf | sh -s -- -y; \
+                . $HOME/.cargo/env rustup; \
+                cargo build --verbose; \
+                cargo test --no-fail-fast --verbose --all -- --nocapture'
       before_deploy:
       deploy:
 
