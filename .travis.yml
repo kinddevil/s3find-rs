@@ -46,7 +46,7 @@ matrix:
         - docker run --rm --privileged multiarch/qemu-user-static:register --reset
       script:
         - |
-          docker run -rm -v "$PWD:/volume" -w "$PWD:/volume" \
+          docker run --rm -v "$PWD:/volume" -w "$PWD:/volume" \
             multiarch/ubuntu-debootstrap:arm64-xenial \
             sh -c 'curl https://sh.rustup.rs -sSf | sh -s -- -y; \
                 . $HOME/.cargo/env rustup; \
